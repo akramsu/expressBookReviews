@@ -37,6 +37,17 @@ public_users.get('/', async function (req, res) {
   }
 });
 
+// Async-Await version with Axios
+public_users.get('/async/books', async (req, res) => {
+  try {
+    const response = await axios.get('http://localhost:5000/');
+    res.send(response.data);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch books", error: error.message });
+  }
+});
+
+
 // Get book details based on ISBN
 public_users.get('/isbn/:isbn', async function (req, res) {
   //Write your code here
@@ -57,6 +68,18 @@ public_users.get('/isbn/:isbn', async function (req, res) {
     return res.status(404).json({ message: err });
   }
 });
+
+// Async-Await version with Axios
+public_users.get('/async/isbn/:isbn', async (req, res) => {
+  const isbn = req.params.isbn;
+  try {
+    const response = await axios.get(`http://localhost:5000/isbn/${isbn}`);
+    res.send(response.data);
+  } catch (error) {
+    res.status(404).json({ message: "Book not found", error: error.message });
+  }
+});
+
 
 // Get book details based on author
 public_users.get('/author/:author', async function (req, res) {
@@ -80,6 +103,18 @@ public_users.get('/author/:author', async function (req, res) {
   }
 });
 
+// Async-Await version with Axios
+public_users.get('/async/author/:author', async (req, res) => {
+  const author = req.params.author;
+  try {
+    const response = await axios.get(`http://localhost:5000/author/${author}`);
+    res.send(response.data);
+  } catch (error) {
+    res.status(404).json({ message: "Author not found", error: error.message });
+  }
+});
+
+
 // Get all books based on title
 public_users.get('/title/:title', async function (req, res) {
   //Write your code here
@@ -101,6 +136,19 @@ public_users.get('/title/:title', async function (req, res) {
     return res.status(404).json({ message: err });
   }
 });
+
+
+// Async-Await version with Axios
+public_users.get('/async/title/:title', async (req, res) => {
+  const title = req.params.title;
+  try {
+    const response = await axios.get(`http://localhost:5000/title/${title}`);
+    res.send(response.data);
+  } catch (error) {
+    res.status(404).json({ message: "Title not found", error: error.message });
+  }
+});
+
 
 // Get book review
 public_users.get('/review/:isbn', function (req, res) {
