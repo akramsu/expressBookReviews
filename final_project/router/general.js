@@ -3,133 +3,114 @@ let books = require("./booksdb.js");
 let isValid = require("./auth_users.js").isValid;
 let users = require("./auth_users.js").users;
 const public_users = express.Router();
+const axios = require('axios');
 
-
-public_users.post("/register", (req,res) => {
+public_users.post("/register", (req, res) => {
+  //Write your code here
   const { username, password } = req.body;
 
-  if(!username || !password) {
-    return res.status(400).json({message: "Username and password are required"});
+  if (!username || !password) {
+    return res.status(400).json({ message: "Username and Password required" });
   }
 
-  if(!isValid(username)) {
-    return res.status(409).json({message: "Username already exists"});
+  if (isValid(username)) {
+    return res.status(409).json({ message: "User already exists!" });
   }
 
-  // Create new user
-  const newUser = {
-    id: users.length ? users[users.length - 1].id + 1 : 1,
-    username: username,
-    password: password,
-  };
-
-  users.push(newUser);
-  
-  return res.status(201).json({
-    message: "User registered successfully",
-    user: { id: newUser.id, username: newUser.username }
-  });
+  users.push({ username, password });
+  return res.status(200).json({ message: "User successfully registered" });
 });
 
 // Get the book list available in the shop
-public_users.get('/',function (req, res) {
-  if(!books || Object.keys(books).length === 0) {
-    return res.status(404).json({message: "No books found"});
+public_users.get('/', async function (req, res) {
+  //Write your code here
+  try {
+    const getBooks = () => {
+      return new Promise((resolve, reject) => {
+        resolve(books);
+      });
+    };
+    const result = await getBooks();
+    return res.status(200).send(JSON.stringify(result, null, 4));
+  } catch (err) {
+    return res.status(500).json({ message: "Error retrieving books" });
   }
-
-  return res.status(200).json({
-    message: "Books fetched successfully",
-    data: books
-  });
 });
 
 // Get book details based on ISBN
-public_users.get('/isbn/:isbn',function (req, res) {
-  const isbn = req.params.isbn;
-  const bookDetails = books[isbn];
-
-  if(!bookDetails) {
-    return res.status(404).json({message: "Book not found"});
+public_users.get('/isbn/:isbn', async function (req, res) {
+  //Write your code here
+  try {
+    const isbn = req.params.isbn;
+    const getBookByISBN = () => {
+      return new Promise((resolve, reject) => {
+        if (books[isbn]) {
+          resolve(books[isbn]);
+        } else {
+          reject("Book not found");
+        }
+      });
+    };
+    const result = await getBookByISBN();
+    return res.status(200).send(JSON.stringify(result, null, 4));
+  } catch (err) {
+    return res.status(404).json({ message: err });
   }
-
-  return res.status(200).json({
-    message: "Book details fetched successfully", 
-    data: bookDetails
-  });
 });
-  
+
 // Get book details based on author
-public_users.get('/author/:author',function (req, res) {
-  const author = req.params.author;
-
-  if(!author) {
-    return res.status(400).json({message: "Author parameter is required"});
+public_users.get('/author/:author', async function (req, res) {
+  //Write your code here
+  try {
+    const author = req.params.author;
+    const getBooksByAuthor = () => {
+      return new Promise((resolve, reject) => {
+        const result = Object.values(books).filter(book => book.author === author);
+        if (result.length > 0) {
+          resolve(result);
+        } else {
+          reject("No books found for this author");
+        }
+      });
+    };
+    const result = await getBooksByAuthor();
+    return res.status(200).send(JSON.stringify(result, null, 4));
+  } catch (err) {
+    return res.status(404).json({ message: err });
   }
-
-  // Find all books by the specified author
-  const booksByAuthor = Object.keys(books)
-    .filter(isbn => books[isbn].author.toLowerCase() === author.toLowerCase())
-    .map(isbn => ({ isbn, ...books[isbn] }));
-  
-  if (booksByAuthor.length === 0) {
-    return res.status(404).json({message: "No books found by this author"});
-  }
-
-  return res.status(200).json({
-    message: "Books by author fetched successfully",
-    data: booksByAuthor
-  });
 });
 
 // Get all books based on title
-public_users.get('/title/:title',function (req, res) {
-  const title = req.params.title;
-
-  if(!title) {
-    return res.status(400).json({message: "Title parameter is required"});
+public_users.get('/title/:title', async function (req, res) {
+  //Write your code here
+  try {
+    const title = req.params.title;
+    const getBooksByTitle = () => {
+      return new Promise((resolve, reject) => {
+        const result = Object.values(books).filter(book => book.title === title);
+        if (result.length > 0) {
+          resolve(result);
+        } else {
+          reject("No books found with this title");
+        }
+      });
+    };
+    const result = await getBooksByTitle();
+    return res.status(200).send(JSON.stringify(result, null, 4));
+  } catch (err) {
+    return res.status(404).json({ message: err });
   }
-
-  const booksByTitle = Object.keys(books)
-    .filter(isbn => books[isbn].title.toLowerCase().includes(title.toLowerCase()))
-    .map(isbn => ({ isbn, ...books[isbn] }));
-  
-  if (booksByTitle.length === 0) {
-    return res.status(404).json({message: "No books found with this title"});
-  }
-
-  return res.status(200).json({
-    message: "Books by title fetched successfully",
-    data: booksByTitle
-  });
 });
 
 // Get book review
-public_users.get('/review/:isbn',function (req, res) {
+public_users.get('/review/:isbn', function (req, res) {
+  //Write your code here
   const isbn = req.params.isbn;
-
-  if(!isbn) {
-    return res.status(400).json({message: "ISBN parameter is required"});
+  if (books[isbn]) {
+    return res.status(200).json(books[isbn].reviews);
+  } else {
+    return res.status(404).json({ message: "Book not found" });
   }
-  
-  const foundBook = books[isbn];
-
-  if(!foundBook) {
-    return res.status(404).json({message: "Book not found"});
-  }
-
-  // Check if book has reviews
-  if (!foundBook.reviews || Object.keys(foundBook.reviews).length === 0) {
-    return res.status(404).json({message: "No reviews found for this book"});
-  }
-
-  return res.status(200).json({
-    message: "Book reviews fetched successfully",
-    data: {
-      isbn: isbn,
-      title: foundBook.title,
-      reviews: foundBook.reviews
-    }
-  });
 });
 
 module.exports.general = public_users;
